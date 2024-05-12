@@ -1,29 +1,34 @@
 <template>
     <div class="container">
       <div class="controls">
-        <button @click="toggle3DModel">{{ toggle3DModelText }}</button>
-        <form @submit.prevent="submitLatLong">
+        
+        <form @submit.prevent="submit3dtiles">
+          <input v-model="filePath" placeholder="纬度" required />
           <input v-model="latitude" placeholder="纬度" required />
           <input v-model="longitude" placeholder="经度" required />
-          <br />
-          <button type="submit">经纬度提交</button>
-        </form>
-        <form @submit.prevent="submitOffsets">
           <input v-model.number="offsetX" placeholder="偏移数值 X" required />
           <input v-model.number="offsetY" placeholder="偏移数值 Y" required />
           <input v-model.number="offsetZ" placeholder="偏移数值 Z" required />
           <br />
-          <button type="submit">偏移数值提交</button>
+          <button type="submit">经纬度提交</button>
         </form>
-        
+        <button @click="toggle3DModel">{{ toggle3DModelText }}</button>
       </div>
       <div class="data-display">
         <form @submit.prevent="createLabel">
           <input v-model.number="LabelX" placeholder="标签 X" required />
           <input v-model.number="LabelY" placeholder="标签 Y" required />
           <input v-model.number="LabelZ" placeholder="标签 Z" required />
+          <input v-model="LabelText" placeholder="标签内容" required />
           <br />
           <button type="submit">标签创建</button>
+        </form>
+        <form @submit.prevent="createCamera">
+          <input v-model.number="CameraX" placeholder="相机 X" required />
+          <input v-model.number="CameraY" placeholder="相机 Y" required />
+          <input v-model.number="CameraZ" placeholder="相机 Z" required />
+          <br />
+          <button type="submit">移动相机</button>
         </form>
         <button @click="toggleWhiteModel">{{ whiteModelCameraText }}</button>
         <button @click="toggleTilesModel">{{ tilesModelCameraText }}</button>
@@ -44,8 +49,8 @@
   </template>
   
   <script>
-import { Config, PixelStreaming } from '@epicgames-ps/lib-pixelstreamingfrontend-ue5.3';
-import { Application, PixelStreamingApplicationStyle } from '@epicgames-ps/lib-pixelstreamingfrontend-ui-ue5.3';
+import { Config, PixelStreaming, ControlSchemeType,Flags,TextParameters} from '@epicgames-ps/lib-pixelstreamingfrontend-ue5.3';
+import { Application, PixelStreamingApplicationStyle, UIElementCreationMode} from '@epicgames-ps/lib-pixelstreamingfrontend-ui-ue5.3';
 // import { is } from 'core-js/core/object';
 
 export default {
@@ -56,6 +61,7 @@ export default {
       is3DModelOn: false,
       isWhiteModelOn: false,
       isTilesModelOn: false,
+      filePath: '',
       latitude: '',
       longitude: '',
       offsetX: 0,
@@ -64,6 +70,7 @@ export default {
       LabelX: 0,
       LabelY: 0,
       LabelZ: 0,
+      LabelText: '',
       whiteModelCameraText: '白模摄像机位置',
       tilesModelCameraText: '倾斜摄影摄像机位置',
       item: { id: null, name: null },
@@ -88,16 +95,37 @@ export default {
     initializePixelStreaming() {
     const PixelStreamingApplicationStyles = new PixelStreamingApplicationStyle();
     PixelStreamingApplicationStyles.applyStyleSheet();
-      const config = new Config({ useUrlParams: true });
+
+      const config = new Config({ useUrlParams: true});
+      config.setFlagEnabled(Flags.HoveringMouseMode, true);
+      config.setFlagEnabled(Flags.FakeMouseWithTouches, true);
+      config.setFlagEnabled(Flags.MatchViewportResolution, true);
+      config.setTextSetting(TextParameters.SignallingServerUrl, 'ws://localhost:80');
+
       this.stream = new PixelStreaming(config);
       const application = new Application({
         stream: this.stream,
-        onColorModeChanged: (isLightMode) => new PixelStreamingApplicationStyle().setColorMode(isLightMode)
-      });
+        onColorModeChanged: (isLightMode) => new PixelStreamingApplicationStyle().setColorMode(isLightMode),
+        settingsPanelConfig: { 
+          isEnabled : true,
+          visibilityButtonConfig : { creationMode : UIElementCreationMode.CreateDefaultElement }
+        },
+        statsPanelConfig: { 
+          isEnabled : false,
+          visibilityButtonConfig : { creationMode : UIElementCreationMode.Disable }
+        },
+        fullScreenControlsConfig: { 
+          isEnabled : false,
+          visibilityButtonConfig : { creationMode : UIElementCreationMode.CreateDefaultElement }
+      }
+    }
+    );
       document.body.appendChild(application.rootElement);
 
       // 假设 addResponseEventListener 是一个用于监听数据的方法
       this.stream.addResponseEventListener('handle_responses', this.handleDataFromUE);
+      this.stream.inputOptions.controlScheme = ControlSchemeType.LockedMouse;
+      this.stream.inputOptions.fakeMouseWithTouches = true;
     },
 
     handleDataFromUE(data) {
@@ -119,7 +147,6 @@ export default {
     console.error("Error parsing JSON:", error);
   }
 },
-
     toggle3DModel() {
       this.is3DModelOn = !this.is3DModelOn;
       this.toggle3DModelText = this.is3DModelOn ? '关闭3D模型' : '开启3D模型';
@@ -146,17 +173,12 @@ export default {
       }
     },
 
-    submitLatLong() {
+    submit3dtiles() {
       const descriptor = {
         command: 'updateLatLong',
+        filePath: this.filePath,
         latitude: this.latitude,
-        longitude: this.longitude
-      };
-      this.sendCommandToUE(descriptor);
-    },
-    submitOffsets() {
-      const descriptor = {
-        command: 'updateOffsets',
+        longitude: this.longitude,
         offsetX: this.offsetX,
         offsetY: this.offsetY,
         offsetZ: this.offsetZ
@@ -168,7 +190,17 @@ export default {
         command: 'createLabel',
         labelX: this.LabelX,
         labelY: this.LabelY,
-        labelZ: this.LabelZ
+        labelZ: this.LabelZ,
+        labelText: this.LabelText
+      };
+      this.sendCommandToUE(descriptor);
+    },
+    createCamera() {
+      const descriptor = {
+        command: 'createCamera',
+        cameraX: this.CameraX,
+        cameraY: this.CameraY,
+        cameraZ: this.CameraZ
       };
       this.sendCommandToUE(descriptor);
     }
@@ -189,7 +221,7 @@ export default {
     justify-content: space-between;
     align-items: flex-start; /* Adjust alignment */
     width: 100vw;
-    height: 20vh;
+    height: 25vh;
   }
   .controls {
     flex: 0 0 300px; /* No grow, no shrink, fixed width */
