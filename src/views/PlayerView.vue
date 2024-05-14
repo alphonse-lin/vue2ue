@@ -79,17 +79,6 @@ export default {
   },
   mounted() {
     this.initializePixelStreaming();
-    // const PixelStreamingApplicationStyles = new PixelStreamingApplicationStyle();
-    // PixelStreamingApplicationStyles.applyStyleSheet();
-
-    // const config = new Config({ useUrlParams: true });
-    // this.stream = new PixelStreaming(config); // 保存 stream 对象到 Vue 的数据属性中
-    // const application = new Application({
-    //   stream: this.stream,
-    //   onColorModeChanged: (isLightMode) => PixelStreamingApplicationStyles.setColorMode(isLightMode)
-    // });
-
-    // document.body.appendChild(application.rootElement);
   },
   methods: {
     initializePixelStreaming() {
