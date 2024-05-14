@@ -3,7 +3,7 @@
       <div class="controls">
         
         <form @submit.prevent="submit3dtiles">
-          <input v-model="filePath" placeholder="纬度" required />
+          <input v-model="filePath" placeholder="文件路径" required />
           <input v-model="latitude" placeholder="纬度" required />
           <input v-model="longitude" placeholder="经度" required />
           <input v-model.number="offsetX" placeholder="偏移数值 X" required />
@@ -49,7 +49,7 @@
   </template>
   
   <script>
-import { Config, PixelStreaming, ControlSchemeType,Flags,TextParameters} from '@epicgames-ps/lib-pixelstreamingfrontend-ue5.3';
+import { Config, PixelStreaming,Flags,TextParameters} from '@epicgames-ps/lib-pixelstreamingfrontend-ue5.3';
 import { Application, PixelStreamingApplicationStyle, UIElementCreationMode} from '@epicgames-ps/lib-pixelstreamingfrontend-ui-ue5.3';
 // import { is } from 'core-js/core/object';
 
@@ -124,8 +124,6 @@ export default {
 
       // 假设 addResponseEventListener 是一个用于监听数据的方法
       this.stream.addResponseEventListener('handle_responses', this.handleDataFromUE);
-      this.stream.inputOptions.controlScheme = ControlSchemeType.LockedMouse;
-      this.stream.inputOptions.fakeMouseWithTouches = true;
     },
 
     handleDataFromUE(data) {
