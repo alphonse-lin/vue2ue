@@ -6,9 +6,9 @@
           <input v-model="filePath" placeholder="文件路径" required />
           <input v-model="latitude" placeholder="纬度" required />
           <input v-model="longitude" placeholder="经度" required />
-          <input v-model.number="offsetX" placeholder="偏移数值 X" required />
-          <input v-model.number="offsetY" placeholder="偏移数值 Y" required />
-          <input v-model.number="offsetZ" placeholder="偏移数值 Z" required />
+          <input v-model="offsetX" placeholder="偏移数值 X" required />
+          <input v-model="offsetY" placeholder="偏移数值 Y" required />
+          <input v-model="offsetZ" placeholder="偏移数值 Z" required />
           <br />
           <button type="submit">经纬度提交</button>
         </form>
@@ -16,19 +16,26 @@
       </div>
       <div class="data-display">
         <form @submit.prevent="createLabel">
-          <input v-model.number="LabelX" placeholder="标签 X" required />
-          <input v-model.number="LabelY" placeholder="标签 Y" required />
-          <input v-model.number="LabelZ" placeholder="标签 Z" required />
+          <input v-model="LabelX" placeholder="标签 X" required />
+          <input v-model="LabelY" placeholder="标签 Y" required />
+          <input v-model="LabelZ" placeholder="标签 Z" required />
           <input v-model="LabelText" placeholder="标签内容" required />
           <br />
           <button type="submit">标签创建</button>
         </form>
         <form @submit.prevent="createCamera">
-          <input v-model.number="CameraX" placeholder="相机 X" required />
-          <input v-model.number="CameraY" placeholder="相机 Y" required />
-          <input v-model.number="CameraZ" placeholder="相机 Z" required />
+          <input v-model="CameraX" placeholder="相机 X" required />
+          <input v-model="CameraY" placeholder="相机 Y" required />
+          <input v-model="CameraZ" placeholder="相机 Z" required />
+          <input v-model="RotateLeftRight" placeholder="左右旋转角度" required />
+          <input v-model="RotateUpDown" placeholder="上下旋转角度" required />
           <br />
-          <button type="submit">移动相机</button>
+          <button type="submit">相机位置更新</button>
+        </form>
+        <form @submit.prevent="adjustSpeed">
+          <input v-model="Speed" placeholder="漫游速度" required />
+          <br />
+          <button type="submit">漫游速度更新</button>
         </form>
         <button @click="toggleWhiteModel">{{ whiteModelCameraText }}</button>
         <button @click="toggleTilesModel">{{ tilesModelCameraText }}</button>
@@ -64,15 +71,21 @@ export default {
       filePath: '',
       latitude: '',
       longitude: '',
-      offsetX: 0,
-      offsetY: 0,
-      offsetZ: 0,
-      LabelX: 0,
-      LabelY: 0,
-      LabelZ: 0,
+      offsetX: '',
+      offsetY: '',
+      offsetZ: '',
+      LabelX: '',
+      LabelY: '',
+      LabelZ: '',
+      CameraX: '',
+      CameraY: '',
+      CameraZ: '',
+      RotateLeftRight: '',
+      RotateUpDown: '',
       LabelText: '',
       whiteModelCameraText: '白模摄像机位置',
       tilesModelCameraText: '倾斜摄影摄像机位置',
+      Speed: '',
       item: { id: null, name: null },
       stream: null,
     };
@@ -159,7 +172,6 @@ export default {
         console.error('Stream not initialized or emitUIInteraction not available.');
       }
     },
-
     submit3dtiles() {
       const descriptor = {
         command: 'updateLatLong',
@@ -187,7 +199,16 @@ export default {
         command: 'createCamera',
         cameraX: this.CameraX,
         cameraY: this.CameraY,
-        cameraZ: this.CameraZ
+        cameraZ: this.CameraZ,
+        rotateLeftRight: this.RotateLeftRight,
+        rotateUpDown: this.RotateUpDown
+      };
+      this.sendCommandToUE(descriptor);
+    },
+    adjustSpeed() {
+      const descriptor = {
+        command: 'adjustSpeed',
+        speed: this.Speed
       };
       this.sendCommandToUE(descriptor);
     }
@@ -208,7 +229,7 @@ export default {
     justify-content: space-between;
     align-items: flex-start; /* Adjust alignment */
     width: 100vw;
-    height: 25vh;
+    height: 40vh;
   }
   .controls {
     flex: 0 0 300px; /* No grow, no shrink, fixed width */
