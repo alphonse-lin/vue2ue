@@ -2,7 +2,7 @@
   <div class="container">
     <div class="controls">
 
-      <form @submit.prevent="submit3dtiles">
+      <form @submit.prevent="submit3dtiles(filePath, modelCode, latitude, longitude, height, offsetX, offsetY, offsetZ)">
         <input v-model="filePath" placeholder="文件路径" required />
         <input v-model="modelCode" placeholder="模型代码" required />
         <input v-model="latitude" placeholder="纬度" required />
@@ -15,28 +15,28 @@
         <button type="submit">3dtiles信息提交</button>
       </form>
       <br />
-      <form @submit.prevent="toggleModel">
+      <form @submit.prevent="toggleModel(modelCode_vis)">
         <input v-model="modelCode_vis" placeholder="模型代码" required />
         <br />
         <button type="submit">{{ toggleModelText }}</button>
       </form>
     </div>
     <div class="data-display">
-      <form @submit.prevent="createLabel">
-        <input v-model="LabelX" placeholder="标签 X" required />
-        <input v-model="LabelY" placeholder="标签 Y" required />
-        <input v-model="LabelZ" placeholder="标签 Z" required />
-        <input v-model="LabelText" placeholder="标签内容" required />
+      <form @submit.prevent="createLabel(labelX, labelY, labelZ, labelText)">
+        <input v-model="labelX" placeholder="标签 X" required />
+        <input v-model="labelY" placeholder="标签 Y" required />
+        <input v-model="labelZ" placeholder="标签 Z" required />
+        <input v-model="labelText" placeholder="标签内容" required />
         <br />
         <button type="submit">标签创建</button>
       </form>
       <br />
-      <form @submit.prevent="createCamera">
-        <input v-model="CameraX" placeholder="相机 X" required />
-        <input v-model="CameraY" placeholder="相机 Y" required />
-        <input v-model="CameraZ" placeholder="相机 Z" required />
-        <input v-model="RotateLeftRight" placeholder="左右旋转角度" required />
-        <input v-model="RotateUpDown" placeholder="上下旋转角度" required />
+      <form @submit.prevent="createCamera(cameraX, cameraY, cameraZ, rotateLeftRight, rotateUpDown)">
+        <input v-model="cameraX" placeholder="相机 X" required />
+        <input v-model="cameraY" placeholder="相机 Y" required />
+        <input v-model="cameraZ" placeholder="相机 Z" required />
+        <input v-model="rotateLeftRight" placeholder="左右旋转角度" required />
+        <input v-model="rotateUpDown" placeholder="上下旋转角度" required />
         <br />
         <button type="submit">相机位置更新</button>
       </form>
@@ -53,8 +53,8 @@
         </tbody>
       </table>
       <br />
-      <form @submit.prevent="adjustSpeed">
-        <input v-model="Speed" placeholder="漫游速度" required />
+      <form @submit.prevent="adjustSpeed(speed)">
+        <input v-model="speed" placeholder="漫游速度" required />
         <br />
         <button type="submit">漫游速度更新</button>
       </form>
@@ -98,20 +98,20 @@ export default {
       offsetX: '',
       offsetY: '',
       offsetZ: '',
-      LabelX: '',
-      LabelY: '',
-      LabelZ: '',
-      CameraX: '',
-      CameraY: '',
-      CameraZ: '',
+      labelX: '',
+      labelY: '',
+      labelZ: '',
+      cameraX: '',
+      cameraY: '',
+      cameraZ: '',
       modelCode: '',
       modelCode_vis: '',
-      RotateLeftRight: '',
-      RotateUpDown: '',
-      LabelText: '',
+      rotateLeftRight: '',
+      rotateUpDown: '',
+      labelText: '',
       whiteModelCameraText: '白模摄像机位置',
       tilesModelCameraText: '倾斜摄影摄像机位置',
-      Speed: '',
+      speed: '',
       item: { id: null, name: null },
       camera_item: { camera_lat: null, camera_lon: null },
       stream: null,
@@ -121,6 +121,8 @@ export default {
     this.initializePixelStreaming();
   },
   methods: {
+    //#region 基础功能
+    // 初始化PixelStreaming
     initializePixelStreaming() {
       const PixelStreamingApplicationStyles = new PixelStreamingApplicationStyle();
       PixelStreamingApplicationStyles.applyStyleSheet();
@@ -154,7 +156,7 @@ export default {
       // 假设 addResponseEventListener 是一个用于监听数据的方法
       this.stream.addResponseEventListener('handle_responses', this.handleDataFromUE);
     },
-
+    // 处理来自UE的数据
     handleDataFromUE(data) {
       // console.log("Received data:", data);
       try {
@@ -180,39 +182,7 @@ export default {
         console.error("Error parsing JSON:", error);
       }
     },
-    toggleModel() {
-      // 检查模型代码是否为空
-      if (!this.modelCode_vis) {
-        alert('请输入模型代码！');
-        return;
-      }
-
-      // 根据当前模型状态决定要执行的操作
-      if (this.is3DModelOn) {
-        // 如果模型已打开，则关闭它
-        this.sendCommandToUE({ command: 'close3DModel', modelCode: this.modelCode_vis });
-      } else {
-        // 如果模型未打开，则打开它
-        this.sendCommandToUE({ command: 'open3DModel', modelCode: this.modelCode_vis });
-      }
-    },
-    toggle3DModel() {
-      this.is3DModelOn = !this.is3DModelOn;
-      this.toggleModelText = this.is3DModelOn ? '关闭模型' : '打开模型';
-      this.sendCommandToUE({ command: this.is3DModelOn ? 'open3DModel' : 'close3DModel' });
-    },
-
-    toggleWhiteModel() {
-      this.isWhiteModelOn = true;
-      // this.whiteModelCameraText = this.isWhiteModelOn ? '去白模' : '回原点';
-      this.sendCommandToUE({ command: this.isWhiteModelOn ? 'openWhiteModel' : 'closeWhiteModel' });
-    },
-
-    toggleTilesModel() {
-      this.isTilesModelOn = true;
-      // this.tilesModelCameraText = this.isTilesModelOn ? '去倾斜摄影' : '回原点';
-      this.sendCommandToUE({ command: this.isTilesModelOn ? 'openTiles' : 'closeTiles' });
-    },
+    // 发送指令到UE
     sendCommandToUE(descriptor) {
       if (this.stream && typeof this.stream.emitUIInteraction === 'function') {
         this.stream.emitUIInteraction(descriptor);
@@ -220,48 +190,90 @@ export default {
         console.error('Stream not initialized or emitUIInteraction not available.');
       }
     },
-    submit3dtiles() {
+    //#endregion
+
+    //#region 业务功能
+    // 基于modelCode，切换模型
+    toggleModel(modelCode) {
+    if (!modelCode) {
+      alert('请输入模型代码！');
+      return;
+    }
+
+    const command = this.is3DModelOn ? 'close3DModel' : 'open3DModel';
+    this.sendCommandToUE({
+      command: command,
+      modelCode_vis: modelCode
+    });
+
+    this.is3DModelOn = !this.is3DModelOn;
+    this.toggleModelText = this.is3DModelOn ? '关闭3D模型' : '开启3D模型';
+  },
+
+    // 相机切换去白模
+    toggleWhiteModel() {
+      this.isWhiteModelOn = true;
+      // this.whiteModelCameraText = this.isWhiteModelOn ? '去白模' : '回原点';
+      this.sendCommandToUE({ command: this.isWhiteModelOn ? 'openWhiteModel' : 'closeWhiteModel' });
+    },
+
+    // 相机切换去倾斜摄影
+    toggleTilesModel() {
+      this.isTilesModelOn = true;
+      // this.tilesModelCameraText = this.isTilesModelOn ? '去倾斜摄影' : '回原点';
+      this.sendCommandToUE({ command: this.isTilesModelOn ? 'openTiles' : 'closeTiles' });
+    },
+
+    // 提交3dtiles信息
+    submit3dtiles(filePath, modelCode, latitude, longitude, height, offsetX, offsetY, offsetZ) {
       const descriptor = {
         command: 'updateLatLong',
-        filePath: this.filePath,
-        modelCode: this.modelCode,
-        latitude: this.latitude,
-        longitude: this.longitude,
-        height: this.height,
-        offsetX: this.offsetX,
-        offsetY: this.offsetY,
-        offsetZ: this.offsetZ
+        filePath: filePath,
+        modelCode: modelCode,
+        latitude: latitude,
+        longitude: longitude,
+        height: height,
+        offsetX: offsetX,
+        offsetY: offsetY,
+        offsetZ: offsetZ
       };
       this.sendCommandToUE(descriptor);
     },
-    createLabel() {
+
+    // 创建标签
+    createLabel(labelX, labelY, labelZ, labelText) {
       const descriptor = {
         command: 'createLabel',
-        labelX: this.LabelX,
-        labelY: this.LabelY,
-        labelZ: this.LabelZ,
-        labelText: this.LabelText
+        labelX: labelX,
+        labelY: labelY,
+        labelZ: labelZ,
+        labelText: labelText
       };
       this.sendCommandToUE(descriptor);
     },
-    createCamera() {
+
+    // 创建相机
+    createCamera(cameraX, cameraY, cameraZ, rotateLeftRight, rotateUpDown) {
       const descriptor = {
         command: 'createCamera',
-        cameraX: this.CameraX,
-        cameraY: this.CameraY,
-        cameraZ: this.CameraZ,
-        rotateLeftRight: this.RotateLeftRight,
-        rotateUpDown: this.RotateUpDown
+        cameraX: cameraX,
+        cameraY: cameraY,
+        cameraZ: cameraZ,
+        rotateLeftRight: rotateLeftRight,
+        rotateUpDown: rotateUpDown
       };
       this.sendCommandToUE(descriptor);
     },
-    adjustSpeed() {
+
+    // 更新漫游速度
+    adjustSpeed(speed) {
       const descriptor = {
         command: 'adjustSpeed',
-        speed: this.Speed
+        speed: speed
       };
       this.sendCommandToUE(descriptor);
     }
+    //#endregion
   }
 }
 </script>
