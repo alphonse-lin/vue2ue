@@ -2,23 +2,25 @@
   <div class="container">
     <div class="controls">
 
-      <form @submit.prevent="submit3dtiles(filePath, modelCode, latitude, longitude, height, offsetX, offsetY, offsetZ)">
-        <input v-model="filePath" placeholder="文件路径" required />
-        <input v-model="modelCode" placeholder="模型代码" required />
-        <input v-model="latitude" placeholder="纬度" required />
-        <input v-model="longitude" placeholder="经度" required />
-        <input v-model="height" placeholder="高度" required />
-        <input v-model="offsetX" placeholder="偏移数值 X" required />
-        <input v-model="offsetY" placeholder="偏移数值 Y" required />
-        <input v-model="offsetZ" placeholder="偏移数值 Z" required />
+      <form
+        @submit.prevent="submit3dtiles(newFilePath, newModelCode, newLatitude, newLongitude, newHeight, newOffsetX, newOffsetY, newOffsetZ)">
+        <input v-model="newFilePath" placeholder="文件路径" required />
+        <input v-model="newModelCode" placeholder="模型代码" required />
+        <input v-model="newLatitude" placeholder="纬度" required />
+        <input v-model="newLongitude" placeholder="经度" required />
+        <input v-model="newHeight" placeholder="高度" required />
+        <input v-model="newOffsetX" placeholder="偏移数值 X" required />
+        <input v-model="newOffsetY" placeholder="偏移数值 Y" required />
+        <input v-model="newOffsetZ" placeholder="偏移数值 Z" required />
         <br />
         <button type="submit">3dtiles信息提交</button>
       </form>
       <br />
-      <form @submit.prevent="toggleModel(modelCode_vis)">
+      <form @submit.prevent>
         <input v-model="modelCode_vis" placeholder="模型代码" required />
         <br />
-        <button type="submit">{{ toggleModelText }}</button>
+        <button @click.prevent="toggleModelOn(modelCode_vis)">开启模型</button>
+        <button @click.prevent="toggleModelOff(modelCode_vis)">关闭模型</button>
       </form>
     </div>
     <div class="data-display">
@@ -91,21 +93,22 @@ export default {
       is3DModelOn: false,
       isWhiteModelOn: false,
       isTilesModelOn: false,
-      filePath: '',
-      latitude: '',
-      longitude: '',
-      height: '',
-      offsetX: '',
-      offsetY: '',
-      offsetZ: '',
+      filePath: [],
+      modelCode: [],
+      latitude: [],
+      longitude: [],
+      height: [],
+      offsetX: [],
+      offsetY: [],
+      offsetZ: [],
       labelX: '',
       labelY: '',
       labelZ: '',
       cameraX: '',
       cameraY: '',
       cameraZ: '',
-      modelCode: '',
-      modelCode_vis: '',
+      modelCodeOn: '',
+      modelCodeOff: '',
       rotateLeftRight: '',
       rotateUpDown: '',
       labelText: '',
@@ -193,88 +196,138 @@ export default {
     //#endregion
 
     //#region 业务功能
-    // 基于modelCode，切换模型
-    toggleModel(modelCode) {
-    if (!modelCode) {
-      alert('请输入模型代码！');
-      return;
-    }
+    // 基于modelCode，开启模型
+    toggleModel(modelCode, modelState) {
+      if(modelState === true) {
+        this.toggleModelOn(modelCode);
+      } else if(modelState === false) {
+        this.toggleModelOff(modelCode);
+      } else {
+        alert('请输入模型状态！');
+      }
+    },
 
-    const command = this.is3DModelOn ? 'close3DModel' : 'open3DModel';
-    this.sendCommandToUE({
-      command: command,
-      modelCode_vis: modelCode
-    });
-
-    this.is3DModelOn = !this.is3DModelOn;
-    this.toggleModelText = this.is3DModelOn ? '关闭3D模型' : '开启3D模型';
+    toggleModelOn(modelCode) {
+      if (!modelCode) {
+        alert('请输入模型代码！');
+        return;
+      }
+      const descriptor = {
+      command: 'open3DModel',
+      modelCodeOn: modelCode,
+      modelOpen:"open"
+    };
+    this.sendCommandToUE(descriptor);
   },
 
-    // 相机切换去白模
-    toggleWhiteModel() {
-      this.isWhiteModelOn = true;
-      // this.whiteModelCameraText = this.isWhiteModelOn ? '去白模' : '回原点';
-      this.sendCommandToUE({ command: this.isWhiteModelOn ? 'openWhiteModel' : 'closeWhiteModel' });
-    },
-
-    // 相机切换去倾斜摄影
-    toggleTilesModel() {
-      this.isTilesModelOn = true;
-      // this.tilesModelCameraText = this.isTilesModelOn ? '去倾斜摄影' : '回原点';
-      this.sendCommandToUE({ command: this.isTilesModelOn ? 'openTiles' : 'closeTiles' });
-    },
-
-    // 提交3dtiles信息
-    submit3dtiles(filePath, modelCode, latitude, longitude, height, offsetX, offsetY, offsetZ) {
+  // 基于modelCode，关闭模型
+  toggleModelOff(modelCode) {
+      if (!modelCode) {
+        alert('请输入模型代码！');
+        return;
+      }
       const descriptor = {
-        command: 'updateLatLong',
-        filePath: filePath,
-        modelCode: modelCode,
-        latitude: latitude,
-        longitude: longitude,
-        height: height,
-        offsetX: offsetX,
-        offsetY: offsetY,
-        offsetZ: offsetZ
-      };
-      this.sendCommandToUE(descriptor);
-    },
+      command: 'open3DModel',
+      modelCodeOff: modelCode,
+      modelClose:"close"
+    };
+    this.sendCommandToUE(descriptor);
+  },
 
-    // 创建标签
-    createLabel(labelX, labelY, labelZ, labelText) {
-      const descriptor = {
-        command: 'createLabel',
-        labelX: labelX,
-        labelY: labelY,
-        labelZ: labelZ,
-        labelText: labelText
-      };
-      this.sendCommandToUE(descriptor);
-    },
+  // 相机切换去白模
+  toggleWhiteModel() {
+    this.isWhiteModelOn = true;
+    // this.whiteModelCameraText = this.isWhiteModelOn ? '去白模' : '回原点';
+    this.sendCommandToUE({ command: this.isWhiteModelOn ? 'openWhiteModel' : 'closeWhiteModel' });
+  },
 
-    // 创建相机
-    createCamera(cameraX, cameraY, cameraZ, rotateLeftRight, rotateUpDown) {
-      const descriptor = {
-        command: 'createCamera',
-        cameraX: cameraX,
-        cameraY: cameraY,
-        cameraZ: cameraZ,
-        rotateLeftRight: rotateLeftRight,
-        rotateUpDown: rotateUpDown
-      };
-      this.sendCommandToUE(descriptor);
-    },
+  // 相机切换去倾斜摄影
+  toggleTilesModel() {
+    this.isTilesModelOn = true;
+    // this.tilesModelCameraText = this.isTilesModelOn ? '去倾斜摄影' : '回原点';
+    this.sendCommandToUE({ command: this.isTilesModelOn ? 'openTiles' : 'closeTiles' });
+  },
 
-    // 更新漫游速度
-    adjustSpeed(speed) {
-      const descriptor = {
-        command: 'adjustSpeed',
-        speed: speed
-      };
-      this.sendCommandToUE(descriptor);
-    }
-    //#endregion
+  // 提交3dtiles信息
+  submit3dtiles(newFilePath, newModelCode, newLatitude, newLongitude, newHeight, newOffsetX, newOffsetY, newOffsetZ) {
+    this.filePath.push(newFilePath);
+    this.modelCode.push(newModelCode);
+    this.latitude.push(newLatitude);
+    this.longitude.push(newLongitude);
+    this.height.push(newHeight);
+    this.offsetX.push(newOffsetX);
+    this.offsetY.push(newOffsetY);
+    this.offsetZ.push(newOffsetZ);
+
+    // 创建 filePath 对象
+    let filePathObject = {};
+    let modelCodeObject = {};
+    this.filePath.forEach((path, index) => {
+      filePathObject[`filepath_${index + 1}`] = path;
+    });
+    this.modelCode.forEach((code, index) => {
+      modelCodeObject[`modelCode_${index + 1}`] = code;
+    });
+
+    let filepath_input = {
+      filePaths: filePathObject
+    };
+    let modelCode_input = {
+      modelCodes: modelCodeObject
+    };
+
+    console.log(filepath_input);
+    console.log(modelCode_input);
+
+    const descriptor = {
+      command: 'updateLatLong',
+      filePath: filepath_input,
+      modelCode: modelCode_input,
+      latitude: this.latitude,
+      longitude: this.longitude,
+      height: this.height,
+      offsetX: this.offsetX,
+      offsetY: this.offsetY,
+      offsetZ: this.offsetZ
+    };
+    this.sendCommandToUE(descriptor);
+  },
+
+  // 创建标签
+  createLabel(labelX, labelY, labelZ, labelText) {
+    const descriptor = {
+      command: 'createLabel',
+      labelX: labelX,
+      labelY: labelY,
+      labelZ: labelZ,
+      labelText: labelText
+    };
+    this.sendCommandToUE(descriptor);
+  },
+
+  // 创建相机
+  createCamera(cameraX, cameraY, cameraZ, rotateLeftRight, rotateUpDown) {
+    const descriptor = {
+      command: 'createCamera',
+      cameraX: cameraX,
+      cameraY: cameraY,
+      cameraZ: cameraZ,
+      rotateLeftRight: rotateLeftRight,
+      rotateUpDown: rotateUpDown
+    };
+    this.sendCommandToUE(descriptor);
+  },
+
+  // 更新漫游速度
+  adjustSpeed(speed) {
+    const descriptor = {
+      command: 'adjustSpeed',
+      speed: speed
+    };
+    this.sendCommandToUE(descriptor);
   }
+  //#endregion
+}
 }
 </script>
 
