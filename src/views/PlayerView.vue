@@ -95,12 +95,12 @@ export default {
       isTilesModelOn: false,
       filePath: [],
       modelCode: [],
-      latitude: [],
-      longitude: [],
-      height: [],
-      offsetX: [],
-      offsetY: [],
-      offsetZ: [],
+      latitude: '',
+      longitude: '',
+      height: '',
+      offsetX: '',
+      offsetY: '',
+      offsetZ: '',
       labelX: '',
       labelY: '',
       labelZ: '',
@@ -161,7 +161,7 @@ export default {
     },
     // 处理来自UE的数据
     handleDataFromUE(data) {
-      // console.log("Received data:", data);
+      console.log("Received data:", data);
       try {
         // 确认 data 是字符串并尝试解析它
         const receivedData = typeof data === 'string' ? JSON.parse(data) : data;
@@ -215,7 +215,7 @@ export default {
       const descriptor = {
       command: 'open3DModel',
       modelCodeOn: modelCode,
-      modelOpen:"open"
+      // modelOpen:"open"
     };
     this.sendCommandToUE(descriptor);
   },
@@ -229,7 +229,7 @@ export default {
       const descriptor = {
       command: 'open3DModel',
       modelCodeOff: modelCode,
-      modelClose:"close"
+      // modelClose:"close"
     };
     this.sendCommandToUE(descriptor);
   },
@@ -252,12 +252,12 @@ export default {
   submit3dtiles(newFilePath, newModelCode, newLatitude, newLongitude, newHeight, newOffsetX, newOffsetY, newOffsetZ) {
     this.filePath.push(newFilePath);
     this.modelCode.push(newModelCode);
-    this.latitude.push(newLatitude);
-    this.longitude.push(newLongitude);
-    this.height.push(newHeight);
-    this.offsetX.push(newOffsetX);
-    this.offsetY.push(newOffsetY);
-    this.offsetZ.push(newOffsetZ);
+    // this.latitude.push(newLatitude);
+    // this.longitude.push(newLongitude);
+    // this.height.push(newHeight);
+    // this.offsetX.push(newOffsetX);
+    // this.offsetY.push(newOffsetY);
+    // this.offsetZ.push(newOffsetZ);
 
     // 创建 filePath 对象
     let filePathObject = {};
@@ -276,19 +276,19 @@ export default {
       modelCodes: modelCodeObject
     };
 
-    console.log(filepath_input);
-    console.log(modelCode_input);
+    // console.log(filepath_input);
+    // console.log(modelCode_input);
 
     const descriptor = {
       command: 'updateLatLong',
       filePath: filepath_input,
       modelCode: modelCode_input,
-      latitude: this.latitude,
-      longitude: this.longitude,
-      height: this.height,
-      offsetX: this.offsetX,
-      offsetY: this.offsetY,
-      offsetZ: this.offsetZ
+      latitude: newLatitude,
+      longitude: newLongitude,
+      height: newHeight,
+      offsetX: newOffsetX,
+      offsetY: newOffsetY,
+      offsetZ: newOffsetZ
     };
     this.sendCommandToUE(descriptor);
   },
