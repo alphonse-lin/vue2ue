@@ -9,11 +9,17 @@
         <input v-model="newLatitude" placeholder="纬度" required />
         <input v-model="newLongitude" placeholder="经度" required />
         <input v-model="newHeight" placeholder="高度" required />
+        <br />
+        <button type="submit">3dtiles信息提交</button>
+      </form>
+      <form
+      @submit.prevent="offsetModel(newModelCodeOffset, newOffsetX, newOffsetY, newOffsetZ)">
+        <input v-model="newModelCodeOffset" placeholder="模型代码" required />
         <input v-model="newOffsetX" placeholder="偏移数值 X" required />
         <input v-model="newOffsetY" placeholder="偏移数值 Y" required />
         <input v-model="newOffsetZ" placeholder="偏移数值 Z" required />
         <br />
-        <button type="submit">3dtiles信息提交</button>
+        <button type="submit">偏移值信息提交</button>
       </form>
       <br />
       <form @submit.prevent>
@@ -21,6 +27,15 @@
         <br />
         <button @click.prevent="toggleModelOn(modelCode_vis)">开启模型</button>
         <button @click.prevent="toggleModelOff(modelCode_vis)">关闭模型</button>
+      </form>
+      <br />
+      <form @submit.prevent="rotateModel(modelCodeRotate, rotateX, rotateY, rotateZ)">
+        <input v-model="modelCodeRotate" placeholder="模型代码" required />
+        <input v-model="rotateX" placeholder="旋转x" required />
+        <input v-model="rotateY" placeholder="旋转y" required />
+        <input v-model="rotateZ" placeholder="旋转z" required />
+        <br />
+        <button type="submit">旋转信息提交</button>
       </form>
     </div>
     <div class="data-display">
@@ -98,9 +113,14 @@ export default {
       latitude: '',
       longitude: '',
       height: '',
+      modelCodeOffset: '',
       offsetX: '',
       offsetY: '',
       offsetZ: '',
+      modelCodeRotate: '',
+      rotateX: '',
+      rotateY: '',
+      rotateZ: '',
       labelX: '',
       labelY: '',
       labelZ: '',
@@ -196,17 +216,6 @@ export default {
     //#endregion
 
     //#region 业务功能
-    // 基于modelCode，开启模型
-    toggleModel(modelCode, modelState) {
-      if(modelState === true) {
-        this.toggleModelOn(modelCode);
-      } else if(modelState === false) {
-        this.toggleModelOff(modelCode);
-      } else {
-        alert('请输入模型状态！');
-      }
-    },
-
     toggleModelOn(modelCode) {
       if (!modelCode) {
         alert('请输入模型代码！');
@@ -249,7 +258,7 @@ export default {
   },
 
   // 提交3dtiles信息
-  submit3dtiles(newFilePath, newModelCode, newLatitude, newLongitude, newHeight, newOffsetX, newOffsetY, newOffsetZ) {
+  submit3dtiles(newFilePath, newModelCode, newLatitude, newLongitude, newHeight) {
     this.filePath.push(newFilePath);
     this.modelCode.push(newModelCode);
     // this.latitude.push(newLatitude);
@@ -285,13 +294,34 @@ export default {
       modelCode: modelCode_input,
       latitude: newLatitude,
       longitude: newLongitude,
-      height: newHeight,
+      height: newHeight
+    };
+    this.sendCommandToUE(descriptor);
+  },
+
+  // 提交偏移信息
+  offsetModel(newModelCodeOffset, newOffsetX, newOffsetY, newOffsetZ) {
+    const descriptor = {
+      command: 'offsetModel',
+      modelCodeOffset: newModelCodeOffset,
       offsetX: newOffsetX,
       offsetY: newOffsetY,
       offsetZ: newOffsetZ
     };
     this.sendCommandToUE(descriptor);
   },
+
+    // 创建标签
+    rotateModel(modelCodeRotate, rotateX, rotateY, rotateZ) {
+      const descriptor = {
+        command: 'rotateModel',
+        modelCodeRotate: modelCodeRotate,
+        rotateX: rotateX,
+        rotateY: rotateY,
+        rotateZ: rotateZ
+      };
+      this.sendCommandToUE(descriptor);
+    },
 
   // 创建标签
   createLabel(labelX, labelY, labelZ, labelText) {
@@ -325,7 +355,20 @@ export default {
       speed: speed
     };
     this.sendCommandToUE(descriptor);
-  }
+  },
+  //#endregion
+
+  //#region 输出功能
+      // 基于modelCode，开启模型
+  toggleModel(modelCode, modelState) {
+      if(modelState === true) {
+        this.toggleModelOn(modelCode);
+      } else if(modelState === false) {
+        this.toggleModelOff(modelCode);
+      } else {
+        alert('请输入模型状态！');
+      }
+    }
   //#endregion
 }
 }
@@ -346,7 +389,7 @@ body {
   align-items: flex-start;
   /* Adjust alignment */
   width: 100vw;
-  height: 40vh;
+  height: 50vh;
 }
 
 .controls {
